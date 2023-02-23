@@ -20,7 +20,6 @@
     <testsuites>
         <testsuite name="Project Test Suite">
             <directory>tests</directory>
-            <exclude>tests/Api/ReviewsTest.php</exclude>
         </testsuite>
     </testsuites>
 
