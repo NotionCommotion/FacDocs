@@ -28,3 +28,18 @@
 /phpunit.xml
 .phpunit.result.cache
 ###< phpunit/phpunit ###
+
+### added for this application ###
+demo-api-backup
+
+/migrations/
+**/*.tmp*
+
+testing
+notes
+src/Entity/Testing
+core
+
+public/tests
+
+###

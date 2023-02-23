@@ -1,0 +1,5 @@
+id, name, ranking
+active, Active, 1
+obsolete, Obsolete, 2
+construction, Construction, 3
+future, Future, 4

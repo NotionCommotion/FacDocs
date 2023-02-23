@@ -1,0 +1,1 @@
+Consider adding TenantUserActionTrait and interface which restricts to given user type.

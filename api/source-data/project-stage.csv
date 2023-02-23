@@ -1,0 +1,5 @@
+id, name, ranking
+planning, Planning,1
+bid, Bid,2
+construction, Construction,3
+closed, Closed,4

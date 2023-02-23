@@ -1,0 +1,1 @@
+Add Twig templates instead of generating in class.

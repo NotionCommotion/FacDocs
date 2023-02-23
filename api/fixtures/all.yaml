@@ -1,0 +1,189 @@
+# Notes
+# parent '10x @child_a*' and child parent: '@parent_a*' appears to have the same outcome.
+# Why does parent: <current()> pass a string?
+# Why can't I create X number of children under each parent?
+# See for persisting! https://github.com/theofidry/AliceBundle/blob/master/doc/advanced-usage.md#persisting-the-classes-in-a-specific-order
+# Good article: https://q.agency/blog/how-to-seed-data-with-symfony-hautelook-fixtures/
+App\Entity\User\SystemUser:
+    system_user_abstract (template):
+        firstName: '<firstName()>'
+        lastName: '<lastName()>'
+        username (unique): '<username()>'
+        plainPassword: 'changeMe'
+        jobTitle: '<jobTitle()>'
+        email (unique): '<email()>'
+        organization: '<systemOrganization()>'
+        tenant: '<systemOrganization()>'    # Just to prevent missing tenant error in BelongsToTenantSubscriber.
+    system_user_testing_admin (extends system_user_abstract):
+        firstName: _TESTER_
+        lastName: ROLE_SYSTEM_ADMIN
+        email: system.admin@example.com
+        plainPassword: 'testing'
+        roles: ["ROLE_SYSTEM_ADMIN"]
+    system_user_testing_user (extends system_user_abstract):
+        firstName: _TESTER_
+        lastName: ROLE_SYSTEM_USER
+        email: system.user@example.com
+        plainPassword: 'testing'
+        roles: ["ROLE_SYSTEM_USER"]
+    system_user_testing_base (extends system_user_abstract):
+        firstName: _TESTER_
+        lastName: ROLE_USER
+        email: system.base@example.com
+        plainPassword: 'testing'
+        #roles: ["ROLE_USER"]
+
+
+#App\Entity\Organization\Tenant:
+#    tenant_organization_abstract (template):
+#    tenant_organization_testing (extends tenant_organization_abstract):
+#         name: TestingTenant
+#    tenant_organization_{1..2} (extends tenant_organization_abstract):
+#         name: <company()>
+
+App\Entity\Organization\TestingTenant:
+    tenant_organization_testing:
+        name: TestingTenant
+        primarySpecification: <csiSpecification()>
+
+App\Entity\Organization\Tenant:
+    tenant_organization_{1..2}:
+        name: <company()>
+        primarySpecification: <csiSpecification()>
+
+App\Entity\User\TenantUser:
+    tenant_user_abstract (template):
+        firstName: '<firstName()>'
+        lastName: '<lastName()>'
+        username (unique): '<username()>'
+        plainPassword: 'changeMe'
+        jobTitle: '<jobTitle()>'
+        email (unique): '<email()>'
+        #tenant: '@tenant_organization_testing'
+    tenant_user_testing_admin (extends tenant_user_abstract):
+        firstName: _TESTER_
+        lastName: ROLE_TENANT_ADMIN
+        email: test.tenant.admin@example.com
+        plainPassword: 'testing'
+        roles: ["ROLE_TENANT_ADMIN"]
+        tenant: '@tenant_organization_testing'
+    tenant_user_testing_user (extends tenant_user_abstract):
+        firstName: _TESTER_
+        lastName: ROLE_TENANT_USER
+        email: test.tenant.user@example.com
+        plainPassword: 'testing'
+        roles: ["ROLE_TENANT_USER"]
+        tenant: '@tenant_organization_testing'
+    tenant_user_testing_base (extends tenant_user_abstract):
+        firstName: _TESTER_
+        lastName: ROLE_USER
+        email: test.tenant.base@example.com
+        plainPassword: 'testing'
+        #roles: ["ROLE_USER"]
+        tenant: '@tenant_organization_testing'
+    tenant_user_{1..3} (extends tenant_user_abstract):
+        tenant: '@tenant_organization_testing'
+    tenant_user_{4..8} (extends tenant_user_abstract):
+        tenant: '@tenant_organization_*'
+
+App\Entity\Organization\Vendor:
+    vendor_abstract (template):
+        name (unique): '<company()>'
+        primarySpecification: <csiSpecification()>
+    vendor_organization_testing (extends vendor_abstract):
+        name: TestingVendor
+        tenant: '@tenant_organization_testing'
+    vendor_organization_{1..2} (extends vendor_abstract):
+        tenant: '@tenant_organization_testing'
+    vendor_organization_{3..5} (extends vendor_abstract):
+        tenant: '@tenant_organization_*'
+
+App\Entity\User\VendorUser:
+    vendor_user_abstract (template):
+        firstName: '<firstName()>'
+        lastName: '<lastName()>'
+        username (unique): '<username()>'
+        plainPassword: 'changeMe'
+        jobTitle: '<jobTitle()>'
+        email (unique): '<email()>'
+    vendor_user_testing_admin (extends vendor_user_abstract):
+        firstName: _TESTER_
+        lastName: ROLE_VENDOR_ADMIN
+        email: test.vendor.admin@example.com
+        plainPassword: 'testing'
+        roles: ["ROLE_VENDOR_ADMIN"]
+        organization: '@vendor_organization_testing'
+        tenant: '@self->organizationsTenant'
+    vendor_user_testing_user (extends vendor_user_abstract):
+        firstName: _TESTER_
+        lastName: ROLE_VENDOR_USER
+        email: test.vendor.user@example.com
+        plainPassword: 'testing'
+        roles: ["ROLE_VENDOR_USER"]
+        organization: '@vendor_organization_testing'
+        tenant: '@self->organizationsTenant'
+    vendor_user_testing_base (extends vendor_user_abstract):
+        firstName: _TESTER_
+        lastName: ROLE_USER
+        email: test.vendor.base@example.com
+        plainPassword: 'testing'
+        #roles: ["ROLE_USER"]
+        organization: '@vendor_organization_testing'
+        tenant: '@self->organizationsTenant'
+    vendor_user_{1..5} (extends vendor_user_abstract):
+        organization: '@vendor_organization_*'
+        #tenant: '@self->organization->tenant'
+        #tenant: '@self->organization->getTenant()'
+        tenant: '@self->organizationsTenant'
+
+App\Entity\Asset\Asset:
+    asset_abstract (template):
+        name (unique): '<company()>'
+    asset_{1..50} (extends asset_abstract):
+        tenant: '@tenant_organization_testing'
+    asset_{51..100} (extends asset_abstract):
+        tenant: '@tenant_organization_*'
+
+App\Entity\Project\Project:
+    project_{1..100}:
+        name (unique): '<company()>'
+        projectStage: <projectStage()>
+        defaultAsset: '@asset_*'
+        tenant: '@asset_<current()>->tenant'
+
+App\Entity\DocumentGroup\DocumentGroup:
+    document_group_abstract (template):
+        name (unique): '<company()>'
+    document_group{1..5} (extends document_group_abstract):
+        tenant: '@tenant_organization_testing'
+    document_group{6..10} (extends document_group_abstract):
+        tenant: '@tenant_organization_*'
+
+App\Entity\Specification\CustomSpecification:
+    custom_specification_abstract (template):
+        name (unique): '<company()>'
+        description: <name()>
+        parent: <csiSpecification()>
+    custom_specification{1..5} (extends custom_specification_abstract):
+        tenant: '@tenant_organization_testing'
+    custom_specification{6..10} (extends custom_specification_abstract):
+        tenant: '@tenant_organization_*'
+
+App\Entity\HelpDesk\Topic:
+    topic_abstract (template):
+        subject: '<name()>'
+        status: '<helpDeskStatus()>'
+        tenant: '@tenant_organization_*'
+    topic_tenant_{1..50} (extends topic_abstract):
+        createBy: '@tenant_user*'
+    topic_vendor_{1..50} (extends topic_abstract):
+        createBy: '@vendor_user*'
+
+App\Entity\HelpDesk\Post:
+    post_abstract (template):
+        message: <name()>
+        tenant: '@tenant_organization_*'
+    post_tenant{1..100} (extends post_abstract):
+        topic: '@topic_tenant*'
+    post_vendor{1..100} (extends post_abstract):
+        topic: '@topic_vendor*'
