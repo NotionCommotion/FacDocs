@@ -4,9 +4,75 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
-    # required for consumer
-    router.request_context.scheme: '%env(API_ENTRYPOINT_SCHEME)%'
-    router.request_context.host: '%env(API_ENTRYPOINT_HOST)%'
+    app.source_data: '%kernel.project_dir%/source-data'
+    app.media_uploads_directory: '%kernel.project_dir%/var/media_uploads/%kernel.environment%'
+    app.physical_file_hash_alg: 'md5'
+    # https://api-platform.com/docs/core/operations/#expose-a-model-without-any-routes
+
+    app.class_attributes: [
+        'Gedmo\Mapping\Annotation\Blameable',
+    ],
+
+    app.removed_routes: [
+        '/attribute_tests',
+        '/attribute_tests/{className}',
+    ],
+    # Only available to system users
+    app.restricted_routes: [],
+    app.removed_schemas: [
+        # Following five are not API resources
+        'AllowedValue',
+        'DataType',
+        'OverrideSetting',
+        'Setting',
+        'SettingType',
+        # Testing only
+        'AttributeTest',
+        # What are these?
+        'AbstractIdGenerator',
+        'ClassMetadata',
+        'PersistentCollection',
+        'ReflectionClass',
+        'ReflectionProperty',
+        # What about interfaces?
+    ],
+    # Only available to system users
+    app.restricted_schemas: [
+        'Tenant',
+        'SystemCredentials',
+    ],
+    # Used with Alice
+    app.fixturePersistOrder: [
+        'App\Entity\Organization\Tenant',
+        'App\Entity\User\TenantUser',
+        'App\Entity\Organization\Vendor',
+        'App\Entity\User\VendorUser',
+    ],
+    app.fixtureDefaultProviders: [
+        'App\Entity\Project\ProjectStage',
+        'App\Entity\Document\DocumentStage',
+        'App\Entity\Document\DocumentType',
+        'App\Entity\Document\MediaType',
+        'App\Entity\User\JobTitle',
+        'App\Entity\User\Department',
+        {'class': 'App\Entity\HelpDesk\Status', 'name':'helpDeskStatus'},
+    ],
+    app.excluded_fixture_property_links: {
+        #'App\Entity\Document\Media': ['documentId'],
+        'App\Entity\Document\Document': ['media'],
+    },
+
+    # Root organization (i.e. system) and user (root system user) IDs.  Maybe change to something hard to guess? Not currently used.
+    app.root_credentials: {'organization': '00000000000000000000000000', 'user':'00000000000000000000000000'},
+
+imports:
+    #- { resource: services/appsettings.yaml }
+    - { resource: app.archive.yaml }
+    - { resource: app.default.yaml }
+    - { resource: app.acl-permission.yaml }
+    - { resource: app.testing-tenant.yaml }
+    - { resource: app.default.roles.yaml }
+
 
 services:
     # default configuration for services in *this* file
@@ -22,15 +88,330 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
+            #- '../src/Tests/'
+            - '../src/Test/Model/'
+            #- '../src/Test/Service/ApiRequestService.php'
+            - '../src/ArchiveBuilder/Dto/'
+            - '../src/ArchiveBuilder/Pages/'
+            - '../src/Model/'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    
+    App\Cache\BlamableAttributeFinderWarmer:
+        arguments:
+            $attributes: '%app.class_attributes%'
+        tags:
+            - { name: kernel.cache_warmer, priority: 100 }
 
-    # Custom data provider 
-    App\Repository\TopBook\TopBookCachedDataRepository:
-        decorates: App\Repository\TopBook\TopBookDataRepository
+    gedmo.listener.blameable:
+        class: Gedmo\Blameable\BlameableListener
+        tags:
+            - { name: doctrine.event_subscriber, connection: default, priority: 0 }
 
-    App\Repository\TopBook\TopBookDataInterface: '@App\Repository\TopBook\TopBookDataRepository'
+    # Be sure to have hirer priority than gedmo.listener.blameable
+    App\EventSubscriber\BlameSubscriber:
+        arguments:
+            $blameableListener: '@gedmo.listener.blameable'
+        tags:
+            -   name: 'doctrine.event_subscribe'
+                priority: 10
+                connection: default
+
+    App\Command\AddTenant:
+        arguments:
+            $blameableListener: '@gedmo.listener.blameable'
+            $testingTenant: '%app.testing_tenant%'
+
+    #App\Command\AddSystemUser:
+    #    arguments:
+    #        $blameableListener: '@gedmo.listener.blameable'
 
     App\OpenApi\OpenApiFactory:
-        decorates: api_platform.openapi.factory
+        decorates: 'lexik_jwt_authentication.api_platform.openapi.factory'
+        #arguments: ['@.inner']
+        # What does the following 4 lines do???
+        # arguments: [ '@App\OpenApi\OpenApiFactory.inner' ]
+        # arguments: ['@.inner']
+        # autoconfigure: false
+        # decorates: 'api_platform.openapi.factory.next'
+        arguments:
+            $openApiFactory: '@.inner'
+            $removedRoutes: '%app.removed_routes%'
+            $restrictedRoutes: '%app.restricted_routes%'
+            $removedSchemas: '%app.removed_schemas%'
+            $restrictedSchemas: '%app.restricted_schemas%'
+        #autoconfigure: false
+        
+    App\Service\PhysicalMediaService:
+        arguments:
+            $baseUploadPath: '%app.media_uploads_directory%'
+            $hashAlg: '%app.physical_file_hash_alg%'
+
+    App\Security\Service\AccessRoleService:
+        arguments:
+            $defaultRoles: '%app.default.roles%'
+
+    App\ArchiveBuilder\ArchiveBuilderService:
+        arguments:
+            $storagePath: '%app.archive.storage%'
+            $prototypePath: '%app.archive.prototype%'
+            $htmlWrapperPath: '%app.archive.wrapper%'
+            $pages: '%app.archive.pages%'
+
+    App\Test\Service\SchemaBuilderService:
+        arguments:
+            $excludedPropertyLinks: '%app.excluded_fixture_property_links%'
+            $enableCache: false
+            #$routerOperationPathResolver: '@api_platform.operation_path_resolver.router'
+            #$routerDebugCommand: '@console.command.router_debug'
+            #$routeNameResolver: '@api_platform.cache.route_name_resolver'
+            #$routeLoader: '@api_platform.route_loader'
+            #$routerRequestContext: '@router.request_context'
+    #App\Processor\AclResourceUpdateProcessor:
+    #    bind:
+    #        $persistProcessor: '@api_platform.state_processor'
+
+    App\DataFixtures\Processor\UserProcessor: ~
+
+    App\Doctrine\EventSubscriber\BelongsToTenantSubscriber:
+        tags:
+            - name: 'doctrine.event_subscriber'
+              connection: 'default'
+              # Do early and definatley before ResourceAclSubscriber and ResourceMemberAclSubscriber 
+              priority: 100
+
+    # Acts on Project, DocumentGroup, Asset.  Do after BelongsToTenantSubscriber
+    App\Doctrine\EventSubscriber\ResourceAclSubscriber:
+        tags:
+            - name: 'doctrine.event_subscriber'
+              connection: 'default'
+              priority: 40
+    App\Doctrine\EventSubscriber\DocumentAclSubscriber:
+        tags:
+            - name: 'doctrine.event_subscriber'
+              connection: 'default'
+              priority: 40
+
+    App\EventListener\PersistTenantListener:
+        tags:
+            - name: 'doctrine.orm.entity_listener'
+              event: 'prePersist'
+              entity: 'App\Entity\Organization\Tenant'
+              priority: 0
+        arguments:
+            $resourceAclPermission: '%app.permission.resource%'
+            $documentAclPermission: '%app.permission.document%'
+            $defaultTenantMediaTypes: '%app.default_tenant_media_types%'
+            $defaultTenantAssets: '%app.default_tenant_assets%'
+
+    App\Doctrine\EventSubscriber\UpdateDefaultValuesSubscriber:
+        tags:
+            - name: 'doctrine.event_subscriber'
+              priority: 10
+
+    # After PersistTenantListener
+    App\EventListener\PersistDocumentListener:
+        tags:
+            - name: 'doctrine.orm.entity_listener'
+              event: 'prePersist'
+              entity: 'App\Entity\Document\Document'
+              priority: -10
+
+   # App\Service\CreateTenantService:
+   #     arguments:
+   #         $defaultTenantMediaTypes: '%app.default_tenant_media_types%'
+   #         $defaultTenantAssets: '%app.default_tenant_assets%'
+
+    App\EventListener\HashUserPasswordListener:
+        tags:
+            - name: 'doctrine.orm.entity_listener'
+              event: 'prePersist'
+              # entity: 'App\Entity\User\EncodeOnPersistInterface'
+              #entity: 'App\Entity\User\UserInterface'
+              entity: 'App\Entity\User\AbstractUser'
+            - name: 'doctrine.orm.entity_listener'
+              event: 'preUpdate'
+              entity: 'App\Entity\User\AbstractUser'
+
+# https://smaine-milianni.medium.com/use-php-enums-as-doctrine-type-in-symfony-85909aa0a19a
+#    _instanceof:
+#        App\Doctrine\Types\EnumTypeInterface:
+#            tags: ['app.doctrine_enum_type']
+        
+    App\DataFixtures\AppFixtures:
+        arguments:
+            $sourceData: '%app.source_data%'
+            $roles: '%security.role_hierarchy.roles%'
+            $blameableListener: '@gedmo.listener.blameable'
+            #$testingTenant: '%app.testing_tenant%'
+
+    # Deals with file upload
+    #App\Processor\MediaDecoratedProcessor:
+    #    bind:
+    #        $persistProcessor: '@api_platform.state_processor'
+    # Future - To allow uploading an initial Document with a media file
+    #App\Processor\DocumentDecoratedProcessor:
+    #    bind:
+    #        $persistProcessor: '@api_platform.state_processor'
+
+    #App\Processor\FileUploadProcessor:
+        #bind:
+        #    $decoratedProcessor: '@api_platform.state_processor'
+        # decorates: 'api_platform.state_processor'
+        # Uncomment only if autoconfiguration is disabled
+        # arguments: ['@App\Processor\FileUploadProcessor.inner']
+        # tags: [ 'api_platform.data_persister' ]
+
+    # See App\Service\UserListRankingService
+    #App\DataProvider\HasRankedListDataProvider:
+    #    bind:
+    #        $collectionDataProvider: '@api_platform.doctrine.orm.default.collection_data_provider'
+    
+    #App\EventListener\RequiresAdditionalValidationListener:
+    #    tags:
+    #        -
+    #            name: 'doctrine.event_listener'
+    #            event: 'prePersist'
+
+    # Use a listener to to check if the user's roles are changed by an admin user, and if so ad the token to a Redis queue to blacklist.
+    # Upon getting a subquential request from the user, update the user's content, remove them from the queue, and continue as normal.
+    #App\EventListener\UpdateTokenListener:
+    #    tags:
+    #        - name: 'doctrine.orm.entity_listener'
+    #          event: 'postUpdate'
+    #          entity: 'App\Entity\User\AbstractUser'
+
+    acme_api.event.jwt_created_listener:
+        class: App\EventListener\JWTCreatedListener
+        arguments: [ '@request_stack' ]
+        tags:
+            - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created, method: onJWTCreated }
+#    acme_api.event.jwt_authenticated_listener:
+#        class: App\EventListener\JWTAuthenticatedListener
+#        tags:
+#            - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_authenticated, method: onJWTAuthenticated }
+    acme_api.event.authentication_success_listener:
+        class: App\EventListener\AuthenticationSuccessListener
+        tags:
+            - { name: kernel.event_listener, event: lexik_jwt_authentication.on_authentication_success, method: onAuthenticationSuccessResponse }
+
+    # Do before eager loading to prevent duplicating JOIN of AclMember?  See priorty table on https://api-platform.com/docs/core/extensions/#example
+    #App\Doctrine\Extensions\ResourceMemberExtension:
+    #    tags:
+    #        - { name: api_platform.doctrine.orm.query_extension.collection, priority: -20}
+    #        - { name: api_platform.doctrine.orm.query_extension.item, priority: -20}
+    #App\Doctrine\Extensions\FolderResourceMemberExtension:
+    #    tags:
+    #        - { name: api_platform.doctrine.orm.query_extension.collection, priority: -20}
+    #        - { name: api_platform.doctrine.orm.query_extension.item, priority: -20}
+
+    # This is for the main Doctrine AppFixture which installs all new.
+    #App\DataFixtures\Purger\DoctrinePurgerFactory:
+    #    tags:
+    #        - { name: 'doctrine.fixtures.purger_factory', alias: 'custom' }
+    #doctrine.fixtures.purger.orm_purger_factory.custom:
+    #  decorates: doctrine.fixtures.purger.orm_purger_factory
+      #class: Doctrine\Bundle\FixturesBundle\Purger\ORMPurgerFactory
+      #class: Doctrine\Bundle\FixturesBundle\Command\LoadDataFixturesDoctrineCommand
+    #  class: App\DataFixtures\Purger\DoctrinePurgerFactory
+    #  arguments:
+    #    - '@doctrine.fixtures.loader'
+    #    - '@doctrine'
+    #    - { default: '@App\DataFixtures\Purger\DoctrinePurgerFactory' }
+    #App\DataFixtures\Purger\DoctrinePurgerFactory:
+    #    # ...
+    #    decoration_inner_name: App\DecoratingMailer.wooz
+    #    arguments: ['@App\DecoratingMailer.wooz']
+    App\DataFixtures\Purger\DoctrinePurgerFactory:
+        tags:
+            - { name: 'doctrine.fixtures.purger_factory', alias: 'my_purger' }
+        arguments:
+            $purgeFactory: '@doctrine.fixtures.purger.orm_purger_factory'
+            $mediaUploadDirectory: '%app.media_uploads_directory%'
+            $archiveStoragePath: '%app.archive.storage%'
+
+
+    # Per: https://github.com/theofidry/AliceDataFixtures/blob/master/doc/advanced-usage.md#exclude-tables-from-purge
+    # Not used: https://symfony.com/bundles/DoctrineFixturesBundle/current/index.html#specifying-purging-behavior
+    fidry_alice_data_fixtures.persistence.purger_factory.doctrine:
+        class: App\DataFixtures\Purger\AlicePurger
+        arguments:
+            $manager: '@doctrine.orm.entity_manager'
+            # Several hacks are performed by this service.  NOT NULL constraints are removed from user, vendor_user, and custom_specification, and $blamableListner and $fakerGenerator are modified because I don't know how to make Alice call a setup method.
+            $blameableListener: '@gedmo.listener.blameable'
+            $fakerGenerator: '@nelmio_alice.faker.generator'
+    # https://github.com/theofidry/AliceBundle/blob/master/doc/advanced-usage.md#persisting-the-classes-in-a-specific-order
+
+    App\DataFixtures\Provider\DefaultValueProvider:
+        tags: [ { name: nelmio_alice.faker.provider } ]
+        arguments:
+            $classes: '%app.fixtureDefaultProviders%'
+
+    # Previously used to restrict to the given Tenant account.
+    # Doctrine\Filters\TenantFilter and EventListener\AuthenticatedTenantEntityListener no longer needed.
+    #acme_api.event.jwt_authenticated_listener:
+    #    class: App\EventListener\AuthenticatedTenantEntityListener
+    #    arguments: ["@doctrine.orm.entity_manager"]
+    #    tags:
+    #        - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_authenticated, method: onJWTAuthenticated }
+
+    # Only necessary if using integer IDs.
+    #app.integer_id_authenticator:
+    #    class: App\Security\IntegerIdAuthenticator
+    #    parent: lexik_jwt_authentication.security.jwt_authenticator
+        
+    # Manges settings which are not in entity.
+    #App\EventListener\TenantSettingsSubscriber:
+    #    tags:
+    #        - { name: 'doctrine.event_subscriber' }
+
+    #App\OpenApi\OpenApiRouteHider:
+    #    decorates: 'api_platform.openapi.factory'
+    #    arguments: [ '@App\OpenApi\OpenApiRouteHider.inner' ]
+    #    autoconfigure: false
+
+    #App\Swagger\SwaggerDecorator:
+    #    decorates: 'api_platform.swagger.normalizer.documentation'
+    
+    #app.swagger_decorator:
+    #    public: false
+    #    class: App\Swagger\SwaggerDecorator
+    #    arguments: [ '@api_platform.serializer.normalizer.item' ]
+    #    tags: [ { name: serializer.normalizer } ]
+    
+    # See https://github.com/TheBigBrainsCompany/TbbcMoneyBundle/issues/141
+    tbbc_money.ratio_provider.ecb:
+        class: Tbbc\MoneyBundle\Pair\RatioProvider\ECBRatioProvider
+        arguments:
+            - '@Symfony\Contracts\HttpClient\HttpClientInterface'
+
+    # Removed since __toString() returns $this->id->toRfc4122()
+    #App\Identifier\UlidUriVariableTransformer:
+    #    tags:
+    #        - { name: api_platform.uri_variables.transformer }
+
+    App\Serializer\TenantAccessControlContextBuilder:
+        decorates: 'api_platform.serializer.context_builder'
+        arguments: [ '@App\Serializer\TenantAccessControlContextBuilder.inner' ]
+        autoconfigure: false
+
+    App\Serializer\AccessControlAttributeNormalizer:
+        arguments: [ '@App\Security\Service\ResourceAclService' ]
+        tags:
+            - { name: 'serializer.normalizer', priority: 64 }
+
+    App\Serializer\DirtyJsonEncoder:
+        tags: [ 'serializer.encoder' ]
+        # By default .inner is passed as argument
+        # decorates: 'api_platform.jsonld.normalizer.item'
+
+    #App\Doctrine\EventSubscriber\DoctrineSchemaListener:
+    #    tags:
+    #        - { name: doctrine.event_listener, event: onSchemaAlterTableAddColumn }
+    #        - { name: doctrine.event_listener, event: onSchemaAlterTableRemoveColumn }
+    #        - { name: doctrine.event_listener, event: onSchemaColumnDefinition }
+    #        - { name: doctrine.event_listener, event: onSchemaAlterTable }
+    #        - { name: doctrine.event_listener, event: onSchemaAlterTableChangeColumn }
+    #        - { name: doctrine.event_listener, event: onSchemaColumnDefinition }
+    #        - { name: doctrine.event_listener, event: onSchemaIndexDefinition }

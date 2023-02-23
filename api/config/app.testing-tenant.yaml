@@ -1,0 +1,18 @@
+parameters:
+    app.testing_tenant:
+        name: TestingTenant
+        timezone: 'America/Los_Angeles'
+        phoneNumber: '+18055550000'
+        address: '123 Main Street'
+        city: Seaview
+        state: WA
+        zipcode: '98011'
+        users:
+        -
+            firstName: Jane
+            lastName: Doe
+            email: 'jane.doe@example.com'
+            plainPassword: changeMe
+            role: ROLE_TENANT_ADMIN
+            directPhoneNumber: '+18055551111'
+            mobilePhoneNumber: '+18055552222'

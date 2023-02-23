@@ -1,0 +1,68 @@
+parameters:
+    app.default.roles:
+        App\Entity\Project\Project:
+            create: ROLE_MANAGE_PROJECT
+            read: ROLE_READ_PROJECT
+            update: ROLE_UPDATE_PROJECT
+            delete: ROLE_MANAGE_PROJECT
+            manage_acl: ROLE_MANAGE_ACL_PROJECT
+        App\Entity\Specification\CustomSpecification:
+            create: ROLE_MANAGE_CUST_SPEC
+            read: ROLE_READ_CUST_SPEC
+            update: ROLE_UPDATE_CUST_SPEC
+            delete: ROLE_MANAGE_CUST_SPEC
+            manage_acl: ROLE_MANAGE_ACL_CUST_SPEC
+        App\Entity\Asset\Asset:
+            create: ROLE_MANAGE_ASSET
+            read: ROLE_READ_ASSET
+            update: ROLE_UPDATE_ASSET
+            delete: ROLE_MANAGE_ASSET
+            manage_acl: ROLE_MANAGE_ACL_ASSET
+        App\Entity\Document\Document:
+            create: ROLE_MANAGE_DOCUMENT
+            read: ROLE_READ_DOCUMENT
+            update: ROLE_UPDATE_DOCUMENT
+            delete: ROLE_MANAGE_DOCUMENT
+            manage_acl: ROLE_MANAGE_ACL_DOCUMENT
+        App\Entity\Organization\Vendor:
+            create: ROLE_MANAGE_VENDOR
+            read: ROLE_READ_VENDOR
+            update: ROLE_UPDATE_VENDOR
+            delete: ROLE_MANAGE_VENDOR
+            manage_acl: ROLE_MANAGE_ACL_VENDOR
+        App\Entity\DocumentGroup\DocumentGroup:
+            create: ROLE_MANAGE_DOC_GROUP
+            read: ROLE_READ_DOC_GROUP
+            update: ROLE_UPDATE_DOC_GROUP
+            delete: ROLE_MANAGE_DOC_GROUP
+            manage_acl: ROLE_MANAGE_ACL_DOC_GROUP
+        App\Entity\User\TenantUser:
+            create: ROLE_MANAGE_TENANT_USER
+            read: ROLE_READ_TENANT_USER
+            update: ROLE_UPDATE_TENANT_USER
+            delete: ROLE_MANAGE_TENANT_USER
+            manage_acl: ROLE_MANAGE_ACL_TENANT_USER
+        App\Entity\User\VendorUser:
+            create: ROLE_MANAGE_VENDOR_USER
+            read: ROLE_READ_VENDOR_USER
+            update: ROLE_UPDATE_VENDOR_USER
+            delete: ROLE_MANAGE_VENDOR_USER
+            manage_acl: ROLE_MANAGE_ACL_VENDOR_USER
+        App\Entity\Archive\Template:
+            create: ROLE_MANAGE_TEMPLATE
+            read: ROLE_READ_TEMPLATE
+            update: ROLE_UPDATE_TEMPLATE
+            delete: ROLE_MANAGE_TEMPLATE
+            manage_acl: ROLE_MANAGE_ACL_TEMPLATE
+        App\Entity\Archive\Archive:
+            create: ROLE_MANAGE_ARCHIVE
+            read: ROLE_READ_ARCHIVE
+            update: ROLE_UPDATE_ARCHIVE
+            delete: ROLE_MANAGE_ARCHIVE
+            manage_acl: ROLE_MANAGE_ACL_ARCHIVE
+        App\Entity\Organization\Tenant:
+            create: ROLE_MANAGE_TENANT
+            read: ROLE_READ_TENANT
+            update: ROLE_UPDATE_TENANT
+            delete: ROLE_MANAGE_TENANT
+            manage_acl: ROLE_MANAGE_ACL_TENANT

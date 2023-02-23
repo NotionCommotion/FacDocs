@@ -1,0 +1,39 @@
+parameters:
+    app.permission.resource:
+        tenant:
+            user:
+                read: NONE
+                update: NONE
+            member:
+                read: ALL
+                update: ALL
+        vendor:
+            user:
+                read: NONE
+                update: NONE
+            member:
+                read: ALL
+                update: NONE
+    app.permission.document:
+        tenant:
+            user:
+                read: OWNER
+                update: OWNER
+                create: NONE
+                delete: NONE
+            member:
+                read: ALL
+                update: OWNER
+                create: NONE
+                delete: NONE
+        vendor:
+            user:
+                read: OWNER
+                update: OWNER
+                create: NONE
+                delete: NONE
+            member:
+                read: ALL
+                update: OWNER
+                create: NONE
+                delete: NONE

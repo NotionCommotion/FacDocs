@@ -1,39 +1,119 @@
+# api/config/packages/security.yaml
 security:
-    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    # https://symfony.com/doc/current/security.html#c-hashing-passwords
     password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
-    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+        # Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+        # same password_hashers used by all users
+        App\Entity\User\UserInterface: auto
+
+    # https://symfony.com/doc/current/security/authenticator_manager.html
+    enable_authenticator_manager: true
+    # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
-        app_user_provider:
-            entity:
-                class: App\Entity\User
-                property: email
+        app_logon_user_provider:
+            id: App\Security\LogonUserProvider
+        # used to reload user from session & other features (e.g. switch_user)
+        #app_user_provider:
+        #    entity:
+        #        class: App\Entity\User\UserInterface
+        #        # Not that property is id and not email since email is not necessarily unique
+        #        property: id
+        jwt:
+            lexik_jwt:
+                class: App\Security\TokenUser
+    # https://symfony.com/doc/current/security.html#hierarchical-roles
+    # Use both MANAGE roles which allow some specific functionallity and type roles such as user, admin, etc.
+    role_hierarchy:
+        ROLE_ADMIN:             ROLE_USER
+        ROLE_TENANT_USER:       ROLE_USER
+
+        # ROLE_MANAGE_ACL_MEMBER
+
+        ROLE_MANAGE_ACL_PROJECT:        ROLE_MANAGE_ACL_MEMBER
+        ROLE_MANAGE_ACL_CUST_SPEC:      ROLE_MANAGE_ACL_MEMBER
+        ROLE_MANAGE_ACL_ASSET:          ROLE_MANAGE_ACL_MEMBER
+        ROLE_MANAGE_ACL_VENDOR:         ROLE_MANAGE_ACL_MEMBER
+        ROLE_MANAGE_ACL_DOC_GROUP:      ROLE_MANAGE_ACL_MEMBER
+        ROLE_MANAGE_ACL_TENANT_USER:    ROLE_MANAGE_ACL_MEMBER
+        ROLE_MANAGE_ACL_VENDOR_USER:    ROLE_MANAGE_ACL_MEMBER
+        ROLE_MANAGE_ACL_TEMPLATE:       ROLE_MANAGE_ACL_MEMBER
+        ROLE_MANAGE_ACL_ARCHIVE:        ROLE_MANAGE_ACL_MEMBER
+
+        ROLE_UPDATE_TENANT:         [ROLE_READ_TENANT]
+        ROLE_UPDATE_PROJECT:        [ROLE_READ_PROJECT]
+        ROLE_UPDATE_CUST_SPEC:      [ROLE_READ_CUST_SPEC]
+        ROLE_UPDATE_ASSET:          [ROLE_READ_ASSET]
+        ROLE_UPDATE_VENDOR:         [ROLE_READ_VENDOR]
+        ROLE_UPDATE_DOC_GROUP:      [ROLE_READ_DOC_GROUP]
+        ROLE_UPDATE_TENANT_USER:    [ROLE_READ_TENANT_USER]
+        ROLE_UPDATE_VENDOR_USER:    [ROLE_READ_VENDOR_USER]
+        ROLE_UPDATE_TEMPLATE:       [ROLE_READ_TEMPLATE]
+        ROLE_UPDATE_ARCHIVE:        [ROLE_READ_ARCHIVE]
+
+        ROLE_MANAGE_TENANT:         [ROLE_UPDATE_TENANT, ROLE_MANAGE_TENANT_ACL]
+        ROLE_MANAGE_PROJECT:        [ROLE_UPDATE_PROJECT, ROLE_MANAGE_ACL_PROJECT]
+        ROLE_MANAGE_CUST_SPEC:      [ROLE_UPDATE_CUST_SPEC, ROLE_MANAGE_ACL_CUST_SPEC]
+        ROLE_MANAGE_ASSET:          [ROLE_UPDATE_ASSET, ROLE_MANAGE_ACL_ASSET]
+        ROLE_MANAGE_VENDOR:         [ROLE_UPDATE_VENDOR, ROLE_MANAGE_ACL_VENDOR]
+        ROLE_MANAGE_DOC_GROUP:      [ROLE_UPDATE_DOC_GROUP, ROLE_MANAGE_ACL_DOC_GROUP]
+        ROLE_MANAGE_TENANT_USER:    [ROLE_UPDATE_TENANT_USER, ROLE_MANAGE_ACL_TENANT_USER]
+        ROLE_MANAGE_VENDOR_USER:    [ROLE_UPDATE_VENDOR_USER, ROLE_MANAGE_ACL_VENDOR_USER]
+        ROLE_MANAGE_TEMPLATE:       [ROLE_UPDATE_TEMPLATE, ROLE_MANAGE_ACL_TEMPLATE]
+        ROLE_MANAGE_ARCHIVE:        [ROLE_UPDATE_ARCHIVE, ROLE_MANAGE_ACL_ARCHIVE]
+
+        #ROLE_MANAGE_TENANT:         [ROLE_READ_TENANT, ROLE_UPDATE_TENANT, ROLE_CREATE_TENANT, ROLE_DELETE_TENANT, ROLE_MANAGE_TENANT_ACL]
+        #ROLE_MANAGE_PROJECT:        [ROLE_READ_PROJECT, ROLE_UPDATE_PROJECT, ROLE_CREATE_PROJECT, ROLE_DELETE_PROJECT, ROLE_MANAGE_ACL_PROJECT]
+        #ROLE_MANAGE_CUST_SPEC:      [ROLE_READ_CUST_SPEC, ROLE_UPDATE_CUST_SPEC, ROLE_CREATE_CUST_SPEC, ROLE_DELETE_CUST_SPEC, ROLE_MANAGE_ACL_CUST_SPEC]
+        #ROLE_MANAGE_ASSET:          [ROLE_READ_ASSET, ROLE_UPDATE_ASSET, ROLE_CREATE_ASSET, ROLE_DELETE_ASSET, ROLE_MANAGE_ACL_ASSET]
+        #ROLE_MANAGE_VENDOR:         [ROLE_READ_VENDOR, ROLE_UPDATE_VENDOR, ROLE_CREATE_VENDOR, ROLE_DELETE_VENDOR, ROLE_MANAGE_ACL_VENDOR]
+        #ROLE_MANAGE_DOC_GROUP:      [ROLE_READ_DOC_GROUP, ROLE_UPDATE_DOC_GROUP, ROLE_CREATE_DOC_GROUP, ROLE_DELETE_DOC_GROUP, ROLE_MANAGE_ACL_DOC_GROUP]
+        #ROLE_MANAGE_TENANT_USER:    [ROLE_READ_TENANT_USER, ROLE_UPDATE_TENANT_USER, ROLE_CREATE_TENANT_USER, ROLE_DELETE_TENANT_USER, ROLE_MANAGE_ACL_TENANT_USER]
+        #ROLE_MANAGE_VENDOR_USER:    [ROLE_READ_VENDOR_USER, ROLE_UPDATE_VENDOR_USER, ROLE_CREATE_VENDOR_USER, ROLE_DELETE_VENDOR_USER, ROLE_MANAGE_ACL_VENDOR_USER]
+        #ROLE_MANAGE_TEMPLATE:       [ROLE_READ_TEMPLATE, ROLE_UPDATE_TEMPLATE, ROLE_CREATE_TEMPLATE, ROLE_DELETE_TEMPLATE, ROLE_MANAGE_ACL_TEMPLATE]
+        #ROLE_MANAGE_ARCHIVE:        [ROLE_READ_ARCHIVE, ROLE_UPDATE_ARCHIVE, ROLE_CREATE_ARCHIVE, ROLE_DELETE_ARCHIVE, ROLE_MANAGE_ACL_ARCHIVE]
+
+        # -> NO? No role for document.  TBD how to give permission to change access for a resource or document.
+        ROLE_MANAGE_DOCUMENT:         [ROLE_READ_DOCUMENT, ROLE_UPDATE_DOCUMENT, ROLE_MANAGE_ACL_DOCUMENT]
+
+        ROLE_MANAGE_RESOURCE_ACL:   [ROLE_MANAGE_TENANT_ACL, ROLE_MANAGE_ACL_PROJECT, ROLE_MANAGE_ACL_CUST_SPEC, ROLE_MANAGE_ACL_ASSET, ROLE_MANAGE_ACL_VENDOR, ROLE_MANAGE_ACL_DOC_GROUP, ROLE_MANAGE_ACL_TENANT_USER, ROLE_MANAGE_ACL_VENDOR_USER, ROLE_MANAGE_ACL_TEMPLATE, ROLE_MANAGE_ACL_ARCHIVE]
+
+        ROLE_TENANT_ADMIN:      [ROLE_MANAGE_RESOURCE_ACL, ROLE_MANAGE_TENANT, ROLE_MANAGE_PROJECT, ROLE_MANAGE_CUST_SPEC, ROLE_MANAGE_ASSET, ROLE_MANAGE_VENDOR, ROLE_MANAGE_DOC_GROUP, ROLE_MANAGE_TENANT_USER, ROLE_MANAGE_VENDOR_USER, ROLE_MANAGE_TEMPLATE, ROLE_MANAGE_ARCHIVE, ROLE_MANAGE_DOCUMENT]
+        ROLE_TENANT_SUPER:      ROLE_TENANT_ADMIN
+        ROLE_VENDOR_USER:       ROLE_USER
+        ROLE_VENDOR_ADMIN:      ROLE_VENDOR_USER
+        ROLE_VENDOR_SUPER:      ROLE_VENDOR_ADMIN
+        ROLE_SUPER_ADMIN:       [ROLE_TENANT_ADMIN, ROLE_VENDOR_ADMIN, ROLE_ALLOWED_TO_SWITCH]
+        ROLE_SYSTEM_USER:       ROLE_SUPER_ADMIN
+        ROLE_SYSTEM_ADMIN:      [ROLE_SYSTEM_USER, ROLE_MANAGE_USER_MANUAL]
+        ROLE_SYSTEM_SUPER:      ROLE_SYSTEM_ADMIN
+    
     firewalls:
         dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            pattern: ^/_(profiler|wdt)
             security: false
         main:
-            lazy: true
-            provider: app_user_provider
+            provider: jwt
+            jwt: ~
+            entry_point: jwt
+            #stateless: true
+            #provider: app_user_provider
             json_login:
+                provider: app_logon_user_provider
                 check_path: /authentication_token
+                # How do I automaticly pass uuid in header?
                 username_path: email
                 password_path: password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
-            jwt: ~
+            refresh_jwt:
+                check_path: authentication_token_refresh
+            #    jwt: ~
 
-            # activate different ways to authenticate
-            # https://symfony.com/doc/current/security.html#the-firewall
-
-            # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
-
-    # Easy way to control access for large sections of your site
-    # Note: Only the *first* access control that matches will be used
     access_control:
+        - { path: ^/docs, roles: PUBLIC_ACCESS } # Allows accessing the Swagger UI
+        - { path: ^/test-accounts, roles: PUBLIC_ACCESS }
         - { path: ^/authentication_token, roles: PUBLIC_ACCESS }
-        - { path: ^/profile, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
     security:

@@ -1,0 +1,28 @@
+parameters:
+    app.default_tenant_media_types:
+        - application/pdf
+        - image/jpeg
+        - image/png
+        - image/jpeg
+        - video/x-msvideo
+        - application/msword
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+        - image/gif
+        - audio/mpeg
+        - video/mpeg
+        - application/vnd.oasis.opendocument.spreadsheet
+        - application/vnd.ms-powerpoint
+        - application/vnd.openxmlformats-officedocument.presentationml.presentation
+        - text/plain
+        - application/vnd.visio
+        - application/vnd.ms-excel
+        - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+        # TBD how Zip files are handled.
+        - application/zip
+        - application/gzip
+        - application/x-7z-compressed
+        - text/csv
+    app.default_tenant_assets:
+        - Buildings
+        - Departments
+        - Common Systems (remove?)

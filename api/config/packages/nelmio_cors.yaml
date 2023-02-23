@@ -7,4 +7,15 @@ nelmio_cors:
         expose_headers: ['Link']
         max_age: 3600
     paths:
-        '^/': null
+        #'^/': null
+        # Not working correct.  Must fix.
+        '^/':
+            origin_regex: true
+            allow_origin: ['^http://localhost:[0-9]+','^https://admin.zadaba.com/:[0-9]+','^https://client.zadaba.com/:[0-9]+','^https://facdocs.zadaba.com/:[0-9]+']
+            #allow_origin: ['^https://admin.zadaba.com/:[0-9]+']
+            #allow_origin: ['^https://client.zadaba.com/:[0-9]+']
+            #allow_origin: ['^https://facdocs.zadaba.com/:[0-9]+']
+            allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
+            allow_headers: ['Content-Type', 'Authorization']
+            expose_headers: ['Link']
+            max_age: 3600

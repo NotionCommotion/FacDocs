@@ -1,0 +1,32 @@
+services:
+    App\Test\Service\ApiRequestService:
+        arguments:
+            $debug: true
+            #$serializer: '@api_platform.serializer.normalizer.item'
+    app.test.api.request.service:
+        alias: App\Test\Service\ApiRequestService
+        public: true
+
+    app.test.api.test.logger.service:
+        alias: App\Test\Service\TestLoggerService
+        public: true
+    app.test.schema.builder.service:
+        alias: App\Test\Service\SchemaBuilderService
+        #public: true
+    app.test.schema.fixture.service:
+        alias: App\Test\Service\SchemaFixtureService
+        #public: true
+    app.test.api.test.helper:
+        alias: App\Test\Service\TestHelperService
+        #public: true
+
+    App\Test\Service\EntityPersisterService:
+        arguments:
+            $blameableListener: '@gedmo.listener.blameable'
+
+
+    App\DataFixtures\Loader\CustomOrderLoader:
+        decorates: 'fidry_alice_data_fixtures.loader.simple'
+        arguments:
+            $fixturePersistOrder: '%app.fixturePersistOrder%'
+            $decoratedLoader: '@App\DataFixtures\Loader\CustomOrderLoader.inner'

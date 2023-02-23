@@ -1,0 +1,50 @@
+parameters:
+    app.archive.storage: '%kernel.project_dir%/var/archives/%kernel.environment%'
+    app.archive.prototype: '%kernel.project_dir%/resources/archive_builder/prototype'
+    app.archive.wrapper: '%kernel.project_dir%/resources/archive_builder/wrapper.html'
+    app.archive.page_folder: '%kernel.project_dir%/resources/archive_builder/pages'
+    # For JS, be sure to locate main.js at bottom since dependent on others.
+    app.archive.pages:
+        - name: Home
+          page: '\App\ArchiveBuilder\Page\SpecTree'
+          filename: index.html
+          js:
+            - assets/js/jquery-3.5.1.min.js
+            - assets/jstree/jstree.min.js
+            - assets/bootstrap/js/bootstrap.bundle.min.js
+            - assets/js/main.js
+          css:
+            - assets/jstree/themes/default/style.min.css
+            - assets/bootstrap/css/bootstrap.min.css
+            - assets/css/main.css
+        - name: Renamed Documents
+          page: '\App\ArchiveBuilder\Page\DocumentTree'
+          filename: document-tree.html
+          js:
+            - assets/js/jquery-3.5.1.min.js
+            - assets/jstree/jstree.min.js
+            - assets/bootstrap/js/bootstrap.bundle.min.js
+            - assets/js/main.js
+          css:
+            - assets/jstree/themes/default/style.min.css
+            - assets/bootstrap/css/bootstrap.min.css
+            - assets/css/main.css
+        - name: File List
+          page: '\App\ArchiveBuilder\Page\DocumentList'
+          filename: files.html
+          js:
+            - assets/js/jquery-3.5.1.min.js
+            - assets/bootstrap/js/bootstrap.bundle.min.js
+            - assets/js/main.js
+          css:
+            - assets/bootstrap/css/bootstrap.min.css
+            - assets/css/main.css
+        - name: Empty Documents
+          page: '\App\ArchiveBuilder\Page\EmptyDocuments'
+          filename: empty.html
+          js:
+            - assets/js/jquery-3.5.1.min.js
+            - assets/bootstrap/js/bootstrap.bundle.min.js
+          css:
+            - assets/bootstrap/css/bootstrap.min.css
+            - assets/css/main.css
