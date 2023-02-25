@@ -126,6 +126,7 @@ services:
     #App\Command\AddSystemUser:
     #    arguments:
     #        $blameableListener: '@gedmo.listener.blameable'
+    #        $phoneNumberUtil: '@libphonenumber\PhoneNumberUtil'
 
     App\OpenApi\OpenApiFactory:
         decorates: 'lexik_jwt_authentication.api_platform.openapi.factory'

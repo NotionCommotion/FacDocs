@@ -37,6 +37,7 @@ RUN set -eux; \
 	docker-php-ext-install -j$(nproc) \
 		intl \
 		zip \
+        xml \
 	; \
 	pecl install \
 		apcu \
@@ -93,7 +94,7 @@ COPY --from=composer:2 --link /usr/bin/composer /usr/bin/composer
 # prevent the reinstallation of vendors at every changes in the source code
 COPY composer.* symfony.* ./
 RUN set -eux; \
-	composer install --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress; \
+	composer install --prefer-dist --no-autoloader --no-scripts --no-progress; \
 	composer clear-cache
 
 # copy sources
@@ -102,9 +103,9 @@ RUN rm -Rf docker/
 
 RUN set -eux; \
 	mkdir -p var/cache var/log; \
-	composer dump-autoload --classmap-authoritative --no-dev; \
+	composer dump-autoload --classmap-authoritative; \
 	composer dump-env prod; \
-	composer run-script --no-dev post-install-cmd; \
+	composer run-script post-install-cmd; \
 	chmod +x bin/console; sync
 VOLUME /srv/app/config/jwt/
 
