@@ -41,9 +41,9 @@ final class LogonUserProvider implements UserProviderInterface, PasswordUpgrader
         // Should I return App\Entity\User\UserInterface or use App\Entity\User\TokenUser?
         $request = $this->requestStack->getCurrentRequest();
         // Do not use this? Why isn't that stored inside the token?
-        $id = $request->headers->get('id') ?? $request->toArray()['id'];
+        $orgId = $request->headers->get('orgId') ?? $request->toArray()['orgId'];
         // Don't use Ulid's constructor as it will only work if string is provided as base32, howebver, both fromBase32() and fromRfc4122() work for either.
-        if ($user = $this->userRepository->getUser(Ulid::fromRfc4122($id), $usernameOrEmail)) {
+        if ($user = $this->userRepository->getUser(Ulid::fromRfc4122($orgId), $usernameOrEmail)) {
             // Either a system, tenant, or vendor user which is using their own organization ID
             if(!$user->getIsActive()) {
                 throw new UserNotFoundException();
@@ -56,7 +56,7 @@ final class LogonUserProvider implements UserProviderInterface, PasswordUpgrader
             if(!$user->getIsActive()) {
                 throw new UserNotFoundException();
             }
-            if (!$tenant = $this->tenantRepository->find(Ulid::fromRfc4122($id))) {
+            if (!$tenant = $this->tenantRepository->find(Ulid::fromRfc4122($orgId))) {
                 throw new CustomUserMessageAuthenticationException('System user found but not tenant.');
             }
             return $user->impersonate($tenant);

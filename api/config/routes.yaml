@@ -1,10 +1,11 @@
 controllers:
     resource: ../src/Controller/
     type: attribute
-authentication_token:
-    #path: /auth
-    path: /authentication_token
-    methods: ['POST']
-authentication_token_refresh:
-    path: /authentication_token_refresh
-    methods: ['POST']
+# TBD whether still required???
+#authentication_token:
+#    #path: /auth
+#    path: /authentication_token
+#    methods: ['POST']
+#authentication_token_refresh:
+#    path: /authentication_token_refresh
+#    methods: ['POST']

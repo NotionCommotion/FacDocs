@@ -387,4 +387,56 @@ EOL;
 
         return array_values(array_filter($results, function ($v) { return null !== $v; }));
     }
+
+
+    public static function getMemory(?string $unit = null, int $dec=0): array
+    {
+        $unit = $unit?strtoupper($unit):$unit;
+        $mult = match ($unit) {
+            'B' => pow(10, 0),
+            'KB' => pow(10, 3),
+            'MB', null => pow(10, 6),
+            'GB' => pow(10, 9),
+            'TB' => pow(10, 12),
+            default => throw new \Exception('Invalid unit: '.$unit)
+        };
+        return [
+            'current' => round(memory_get_usage(false)/$mult, $dec).$unit,
+            'cur_alloc' => round(memory_get_usage(true)/$mult, $dec).$unit,
+            'peak' => round(memory_get_peak_usage(false)/$mult, $dec).$unit,
+            'peak_alloc' => round(memory_get_peak_usage(true)/$mult, $dec).$unit,
+            'custom' => round(self::memory_get_process_usage()/$mult, $dec).$unit,
+        ];
+    }
+    public static function getMemoryHeader(?string $message='Message', array $extra = [], bool $newline=true): string
+    {
+        return self::toRow($message, array_keys(self::getMemory()), $extra, $newline);
+    }
+    public static function getMemoryRow(?string $message=null, ?string $unit = 'mb', array $extra = [], bool $newline=true): string
+    {
+        return self::toRow($message, array_values(self::getMemory($unit)), $extra, $newline);
+    }
+    private static function toRow(?string $message, array $values, array $extra, bool $newline): string
+    {
+        $values = array_merge([$message], $values, $extra);
+        return sprintf('%30s'.str_repeat(' %10s', count($values)-1).($newline?PHP_EOL:''), ...$values);
+    }
+
+    /**
+     * Returns memory usage from /proc<PID>/status in bytes.
+     *
+     * @return int|bool sum of VmRSS and VmSwap in bytes. On error throws Exception.
+     */
+    public static function memory_get_process_usage():int
+    {
+        $status = file_get_contents('/proc/' . getmypid() . '/status');
+
+        $matchArr = [];
+        preg_match_all('~^(VmRSS|VmSwap):\s*([0-9]+).*$~im', $status, $matchArr);
+
+        if(!isset($matchArr[2][0]) || !isset($matchArr[2][1])) {
+            throw new \Exception();
+        }
+        return intval(1000*($matchArr[2][0]) + intval($matchArr[2][1]));
+    }
 }

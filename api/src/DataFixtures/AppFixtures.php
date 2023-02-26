@@ -65,22 +65,23 @@ class AppFixtures extends Fixture
     private string $rootId;
 
     private SplObjectStorage $passwordMap;
-    
+
     // User's last name will be their declared role.
 
     public function __construct(private string $sourceData, private array $roles, private BlameableListener $blameableListener)
     {
         $this->passwordMap = new SplObjectStorage();
         $this->rootId = (new NilUlid)->toRfc4122();
+        ini_set('memory_limit','256M');
     }
 
     public function load(ObjectManager $objectManager): void
     {
         //$this->addForeignConstraint($objectManager, 'project', 'acl', 'id', 'id', 'project_acl_pk');
         echo('Create non-tenant resources:'.PHP_EOL);
-        $specHelper = (new SpecHelper((new CsiSpecification())->setTitle('root')->setDivision('')));
         $this
         // ->prepareUserManual($objectManager)
+        ->installSpecifications($objectManager, 'masterFormat_2016.csv')
         ->installStringIdDefault($objectManager, DocumentStage::class, 'document-stage.csv')
         ->installStringIdDefault($objectManager, ProjectStage::class, 'project-stage.csv')
         ->installStringIdDefault($objectManager, DocumentType::class, 'document-type.csv')
@@ -91,8 +92,6 @@ class AppFixtures extends Fixture
         ->installMediaTypes($objectManager, 'media-types.json', 'media-types.csv', 'default-media.csv')
         ->installUsStates($objectManager, 'us-states.json')
         ->installNaicsCode($objectManager, 'naics-2_6_digit-2022.csv');
-
-        $this->installSpecifications($objectManager, 'masterFormat_2016.csv', $specHelper);
 
         echo('Create ROOT user:'.PHP_EOL);
         $rootUser = $this->createRootUser($objectManager);
@@ -126,25 +125,23 @@ class AppFixtures extends Fixture
             $conn = $objectManager->getConnection();
             // Could $conn->rollback() be used?
             echo(get_class($conn).PHP_EOL);
-            
+
             $conn->prepare('DELETE FROM organization WHERE id=?')->executeStatement([$this->rootId]);
 
             $conn->exec('DELETE FROM '.self::USERS_MANUAL_TABLE);
             $conn->exec('DELETE FROM '.self::US_STATE_TABLE);
             $conn->exec('DELETE FROM '.self::MEDIA_TYPE_TYPE_TABLE);
             echo('throw $e'.PHP_EOL);
-            
+
             throw $e;
         }
         $this->changeNullableConstraint($objectManager, 'public.user', 'organization_id', true);
-
-        $this->validateSpecifications($objectManager, $specHelper);
 
         $this->displayUserCredentials($systemOrganization)->displayUserCredentials($testingTenant);
         foreach($testingTenant->getVendors() as $vendor) {
             $this->displayUserCredentials($vendor);
         }
-        
+
         echo 'Complete!'.\PHP_EOL;
     }
 
@@ -564,10 +561,12 @@ class AppFixtures extends Fixture
         return $this;
     }
 
-    private function installSpecifications(ObjectManager $objectManager, string $file, SpecHelper $specHelper): self
+    private function installSpecifications(ObjectManager $objectManager, string $file): self
     {
         echo 'Create CSI Specifications'.\PHP_EOL;
-        $objectManager->flush();
+
+        $specHelper = (new SpecHelper((new CsiSpecification())->setTitle('root')->setDivision('')));
+
         foreach ($this->parseSpecCsvFile($this->sourceData.'/'.$file) as $spec) {
             SpecHelper::create($spec[1], $spec[0], $specHelper);
         }
@@ -581,8 +580,16 @@ class AppFixtures extends Fixture
         ->displayLog('Parent not set since the child is empty', $log['emptyChild']);
 
         echo 'Save CSI Specifications'.\PHP_EOL;
+        echo(SpecHelper::getMemoryHeader());
+        echo(SpecHelper::getMemoryRow('Start'));
         $specHelper->persist($objectManager);
         $objectManager->flush();
+
+        $this->validateSpecifications($objectManager, $specHelper);
+
+        unset($specHelper);
+        echo(SpecHelper::getMemoryRow('Complete'));
+
         return $this;
     }
     private function validateSpecifications(ObjectManager $objectManager, SpecHelper $specHelper)

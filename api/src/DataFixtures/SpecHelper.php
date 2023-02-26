@@ -18,9 +18,12 @@ use App\Entity\Specification\SpecificationType;
 use Doctrine\Persistence\ObjectManager;
 use JsonSerializable;
 use Exception;
+use App\Traits\HelperTrait;
 
 class SpecHelper implements JsonSerializable
 {
+    use HelperTrait;
+
     private const MAX_INSERTS = 1000;
 
     private SpecificationType $type;
@@ -155,12 +158,11 @@ class SpecHelper implements JsonSerializable
         foreach ($this->children as $child) {
             $child->persist($objectManager, $counter);
             if($counter % self::MAX_INSERTS === 0) {
-                printf('Spec intermidiate flush %d (%d records)'.PHP_EOL, $counter/self::MAX_INSERTS, $counter);
+                echo($this->getMemoryRow(sprintf('%s - %s', $counter/self::MAX_INSERTS, $counter)));
                 $objectManager->flush();
             }
             $counter++;
         }
-        $children = [];
         return $counter;
     }
 
