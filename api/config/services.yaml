@@ -4,6 +4,10 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    # required for consumer
+    router.request_context.scheme: '%env(API_ENTRYPOINT_SCHEME)%'
+    router.request_context.host: '%env(API_ENTRYPOINT_HOST)%'
+
     app.source_data: '%kernel.project_dir%/source-data'
     app.media_uploads_directory: '%kernel.project_dir%/var/media_uploads/%kernel.environment%'
     app.physical_file_hash_alg: 'md5'

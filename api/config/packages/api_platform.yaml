@@ -2,15 +2,14 @@ api_platform:
     title: FacDocs Prototype
     version: 1.0.0
     show_webby: false
-    # caused error with api-platform 1.3 and thus removed.  Verify if needed.
+    description: |
+        This is a FacDocs application.
     # Pretty sure Entity is added by default and only needed to explicitly state if exposting another directory (i.e. Model).
-    #mapping:
-    #    paths: [
-    #        '%kernel.project_dir%/src/Entity',
+    mapping:
+        paths: [
+            '%kernel.project_dir%/src/Entity',
     #        '%kernel.project_dir%/src/Model',
-    #    ]
-    # caused error with api-platform 1.3 and thus removed.  Verify if needed.
-    #metadata_backward_compatibility_layer: false
+        ]
     swagger:
         # No longer required with api-platform 1.3?
         #versions: [3]
@@ -21,13 +20,13 @@ api_platform:
     openapi:
         swagger_ui_extra_configuration:
             persistAuthorization: true
-    # No need to address Mercure? See https://github.com/api-platform/core/issues/4485
-    # Good cache defaults for REST APIs.  Verify
-    #defaults:
-    #    stateless: true
-    #    cache_headers:
-    #        vary: ['Content-Type', 'Authorization', 'Origin']
-
+    # Mercure integration, remove if unwanted
+    mercure: ~
+    # Good cache defaults for REST APIs
+    defaults:
+        stateless: true
+        cache_headers:
+            vary: ['Content-Type', 'Authorization', 'Origin']
     formats:
         jsonld:   ['application/ld+json']
         jsonhal:  ['application/hal+json']
@@ -39,8 +38,9 @@ api_platform:
         html:     ['text/html']
         dirtyjson: ['application/vnd.dirty_json_encoder']
     # No longer required with api-platform 1.3?
-    #patch_formats:
-    #    json: ['application/merge-patch+json']
+    patch_formats:
+        json: ['application/merge-patch+json']
+        jsonapi: ['application/vnd.api+json']
 
     exception_to_status:
         # The 4 following handlers are registered by default, keep those lines to prevent unexpected side effects
